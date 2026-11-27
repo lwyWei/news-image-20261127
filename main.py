@@ -1,35 +1,38 @@
-"""Publish the 27 November 2026 front page for grading.
+"""Copy the 27 November 2026 front page to the grading directory.
 
-The newspaper image ships with this script as ``entry.png``. Running the
-script places a copy where the grader looks for it, so the score can be
-collected without network access or extra tooling.
+The image ``entry.png`` travels with this script. This program places a
+copy where the grader expects it, using only the Python standard library,
+so the entry needs no network access and no extra packages.
 """
 
-from os import environ
-from pathlib import Path
-from shutil import copyfile
+import os
+import shutil
 
 
-def bundled_image() -> Path:
-    """Locate the front-page image stored beside this script."""
-    return Path(__file__).resolve().parent.joinpath("entry.png")
+IMAGE_NAME = "entry.png"
+DEFAULT_OUTPUT = "/output"
 
 
-def target_directory() -> Path:
-    """Resolve the directory the grader reads the image from."""
-    return Path(environ.get("MAKEFUN_OUTPUT_DIR", "/output"))
+def image_path():
+    """Return the path of the image shipped beside this script."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(here, IMAGE_NAME)
 
 
-def publish() -> None:
-    """Copy the front page into place for the grader."""
-    target = target_directory()
-    target.mkdir(parents=True, exist_ok=True)
-    finished = target / "entry.png"
-    copyfile(bundled_image(), finished)
-    # Leave the copy readable by every user: the grader collects the
-    # image as a different user, and a 0600 file would not be readable.
-    finished.chmod(0o644)
+def output_dir():
+    """Return the directory the grader reads, honouring the environment."""
+    return os.environ.get("MAKEFUN_OUTPUT_DIR", DEFAULT_OUTPUT)
 
 
-if __name__ == "__main__":
-    raise SystemExit(publish())
+def main():
+    """Copy the front page into the output directory."""
+    destination = output_dir()
+    os.makedirs(destination, exist_ok=True)
+    target = os.path.join(destination, IMAGE_NAME)
+    shutil.copyfile(image_path(), target)
+    # Make the copy world-readable: the grader collects it as another user.
+    os.chmod(target, 0o644)
+    return 0
+
+
+main()
